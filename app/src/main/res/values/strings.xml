@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ضبط تماس</string>
+    <string name="notif_channel_name">ضبط مکالمه</string>
+    <string name="notif_recording_title">در حال ضبط مکالمه</string>
+    <string name="notif_recording_text">مکالمهٔ جاری در حال ضبط است</string>
+</resources>

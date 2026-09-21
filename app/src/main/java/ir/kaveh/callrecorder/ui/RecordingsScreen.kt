@@ -1,0 +1,169 @@
+package ir.kaveh.callrecorder.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CallMade
+import androidx.compose.material.icons.filled.CallReceived
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import ir.kaveh.callrecorder.data.Recording
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecordingsScreen(vm: RecordingsViewModel) {
+    val recordings by vm.recordings.collectAsState()
+    val query by vm.query.collectAsState()
+    val playingId by vm.playingId.collectAsState()
+    val rooted by vm.isRooted.collectAsState()
+    val testing by vm.isTestRecording.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("ضبط تماس") },
+                actions = {
+                    val label = if (rooted) "روت: فعال" else "میکروفون"
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(label) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = vm::setQuery,
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                placeholder = { Text("جستجو بر اساس نام یا شماره") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .padding(top = 12.dp)
+            )
+
+            // دکمهٔ تست ضبط دستی — برای عیب‌یابی مستقل از تماس
+            Button(
+                onClick = { vm.toggleTestRecording() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (testing) Color(0xFFC62828) else MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Icon(
+                    if (testing) Icons.Default.Stop else Icons.Default.FiberManualRecord,
+                    contentDescription = null
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(if (testing) "توقف تست ضبط" else "تست ضبط دستی (میکروفون)")
+            }
+
+            if (recordings.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "هنوز ضبطی وجود ندارد.\nپس از اولین تماس اینجا نمایش داده می‌شود.",
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(recordings, key = { it.id }) { rec ->
+                        RecordingRow(
+                            rec = rec,
+                            isPlaying = playingId == rec.id,
+                            onPlay = { vm.play(rec) },
+                            onStop = { vm.stopPlayback() },
+                            onDelete = { vm.delete(rec) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordingRow(
+    rec: Recording,
+    isPlaying: Boolean,
+    onPlay: () -> Unit,
+    onStop: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(shape = RoundedCornerShape(14.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (rec.direction == "INCOMING")
+                    Icons.Default.CallReceived else Icons.Default.CallMade,
+                contentDescription = null,
+                tint = if (rec.direction == "INCOMING") Color(0xFF2E7D32) else Color(0xFF1565C0)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = rec.contactName ?: rec.phoneNumber ?: "ناشناس",
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${formatDate(rec.startTime)}  •  ${formatDuration(rec.durationMs)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+            IconButton(onClick = if (isPlaying) onStop else onPlay) {
+                Icon(
+                    if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "توقف" else "پخش"
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "حذف")
+            }
+        }
+    }
+}
+
+private fun formatDate(t: Long): String =
+    SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.US).format(Date(t))
+
+private fun formatDuration(ms: Long): String {
+    val totalSec = ms / 1000
+    val m = totalSec / 60
+    val s = totalSec % 60
+    return "%d:%02d".format(m, s)
+}
