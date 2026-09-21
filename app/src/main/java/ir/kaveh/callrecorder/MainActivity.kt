@@ -43,6 +43,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // بعد از بازگشت از تنظیمات، وضعیت سرویس دسترسی‌پذیری را تازه کن
+        vm.refreshAccessibility()
+    }
+
     private fun requestNeededPermissions() {
         val perms = mutableListOf(
             Manifest.permission.RECORD_AUDIO,

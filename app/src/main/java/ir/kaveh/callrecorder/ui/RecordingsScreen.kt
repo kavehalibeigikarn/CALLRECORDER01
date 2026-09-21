@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.CallReceived
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
@@ -32,6 +33,7 @@ fun RecordingsScreen(vm: RecordingsViewModel) {
     val playingId by vm.playingId.collectAsState()
     val rooted by vm.isRooted.collectAsState()
     val testing by vm.isTestRecording.collectAsState()
+    val accessibilityOn by vm.accessibilityOn.collectAsState()
 
     Scaffold(
         topBar = {
@@ -53,6 +55,39 @@ fun RecordingsScreen(vm: RecordingsViewModel) {
                 .padding(padding)
                 .fillMaxSize()
         ) {
+            // هشدار: اگر سرویس دسترسی‌پذیری روشن نباشد، ضبط تماس کار نمی‌کند
+            if (!accessibilityOn) {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, null, tint = Color(0xFFE65100))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "سرویس دسترسی‌پذیری خاموش است",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFFE65100)
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "برای ضبط تماس روی اندروید ۱۴+ باید این سرویس را روشن کنید، " +
+                                "وگرنه سیستم میکروفون را هنگام تماس قطع می‌کند.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Button(onClick = { vm.openAccessibilitySettings() }) {
+                            Text("روشن‌کردن سرویس دسترسی‌پذیری")
+                        }
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = query,
                 onValueChange = vm::setQuery,
@@ -62,7 +97,7 @@ fun RecordingsScreen(vm: RecordingsViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
-                    .padding(top = 12.dp)
+                    .padding(top = 4.dp)
             )
 
             // دکمهٔ تست ضبط دستی — برای عیب‌یابی مستقل از تماس

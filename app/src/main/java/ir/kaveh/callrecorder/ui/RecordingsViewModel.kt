@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import ir.kaveh.callrecorder.data.AppDatabase
 import ir.kaveh.callrecorder.data.Recording
 import ir.kaveh.callrecorder.recorder.AudioRecorderEngine
+import ir.kaveh.callrecorder.util.AccessibilityUtil
 import ir.kaveh.callrecorder.util.RootUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,17 @@ class RecordingsViewModel(app: Application) : AndroidViewModel(app) {
 
     /** وضعیت روت، برای نمایش در رابط. */
     val isRooted = MutableStateFlow(false)
+
+    /** آیا سرویس دسترسی‌پذیری روشن است؟ */
+    val accessibilityOn = MutableStateFlow(false)
+
+    fun refreshAccessibility() {
+        accessibilityOn.value = AccessibilityUtil.isEnabled(getApplication())
+    }
+
+    fun openAccessibilitySettings() {
+        AccessibilityUtil.openSettings(getApplication())
+    }
 
     // پخش‌کنندهٔ ساده
     private var player: MediaPlayer? = null
